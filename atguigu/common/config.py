@@ -1,0 +1,34 @@
+from functools import lru_cache
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+
+
+class Settings(BaseSettings):
+    database_url: str = (
+        "postgresql+psycopg://customer_service:customer_service@192.168.200.188:5432/customer_service"
+    )
+    redis_url: str = "redis://192.168.200.188:6379/0"
+    jwt_secret: str = "ecommerce-secret"
+    jwt_algorithm: str = "HS256"
+    api_host: str = "0.0.0.0"
+    api_port: int = 8000
+    cors_origins: list[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174"
+    ]
+
+    model_config = SettingsConfigDict(env_file=ENV_FILE, extra="ignore")
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+
+
