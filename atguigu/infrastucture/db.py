@@ -19,7 +19,7 @@ from atguigu.common.event_loop import run_async
 
 db_engine: AsyncEngine = create_async_engine(
     url=get_settings().database_url,
-    echo=True
+    echo=False
 )
 #
 # expire_on_commit: 提交后是否过期（上一步查询的数据提交之后是否还保留在内存中，
