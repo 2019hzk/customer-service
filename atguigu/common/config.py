@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     conversation_idle_timeout_minutes: int = 30
+    message_merge_delay_ms: int = 800
+    message_merge_max_wait_ms: int = 2000
     cors_origins: list[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",

@@ -42,6 +42,21 @@ class ConversationService:
             "is_processing": is_processing  # AI 服务有没有在处理轮次消息
         }
 
+    async def ensure_locked_active_conversation(
+            self,
+            user_id: str,
+    ) -> Conversation:
+        # (Conversation,conv_id)->conversation
+        # 加锁：两个请求后面一个请求能够从数据库中查询到第一个请求修改后的conversation版本【1--->2】
+        # orm框架发现这一次查询的缓存key和上一次一模一样，就没有把这一次查询到最新的conversation版本【1--->2】，返回的上一个请求还没有修改的conversation（1）
+
+        conversation = await self.ensure_activate_conversation(user_id)
+        await self.session.refresh(
+            conversation,
+            with_for_update=True
+        )
+        return conversation
+
     async def ensure_activate_conversation(self, user_id: str) -> Conversation:
         """
         职责：1. 当前用户已经超时过期的会话修改状态为关闭【CLOSED】 2. 确保当前用户会话存在
@@ -56,15 +71,11 @@ class ConversationService:
         conversation = await self.conversation_repo.find_activate_conversation(user_id,
                                                                                ("AI", "QUEUED", "HUMAN")
                                                                                )
-
         if conversation:
             return conversation
 
         # 3. 如果没有找到一个有效的会话，创建该用户的新会话 在返回
-        return await self._create_ai_conversation(user_id)
-
-    async def _create_ai_conversation(self, user_id: str) -> Conversation:
-        return await self.conversation_repo.add(user_id)
+        return await self.conversation_repo.add_conversation(user_id)
 
     async def _close_timeout_conversation(self, user_id: str):
         """
@@ -79,12 +90,9 @@ class ConversationService:
         conversation = await  self.conversation_repo.get_ai_conversation(user_id)
         if conversation is not None:
             # 2. 遍历 判断 修改
-            flag = False
             if _has_idle_timeout(conversation):
                 conversation.mode = "CLOSED"
                 conversation.ended_at = conversation.last_active_at
-                flag = True
-            if flag:
                 await self.session.flush()
 
     async def get_conversation_detail(self, conversation_id: str) -> dict[str, list[dict[str, Any]]]:

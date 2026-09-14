@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from atguigu.models.models import Message
+from atguigu.models.models import Message, Conversation
 
 
 class MessageRepository:
@@ -16,3 +16,19 @@ class MessageRepository:
         )
 
         return list(results.all())
+
+    async def find_with_conversation_by_message_id(self, message_id: str) -> tuple[Message, Conversation] | None:
+        result = await self.session.execute(
+            select(Message)
+            .join(
+                Conversation,
+                Message.conversation_id == Conversation.id
+            )
+            .where(Message.message_id == message_id)
+        )
+
+        return result.tuples().scalar_one_or_none()
+
+    def add_message(self, message:Message):
+        self.session.add(message)
+

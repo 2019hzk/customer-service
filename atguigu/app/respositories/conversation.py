@@ -24,7 +24,7 @@ class ConversationRepository:
             .limit(1)
         )
 
-    async def add(self, user_id: str) -> Conversation:
+    async def add_conversation(self, user_id: str) -> Conversation:
         conversation = Conversation(user_id=user_id, mode="AI")
 
         self.session.add(conversation)
