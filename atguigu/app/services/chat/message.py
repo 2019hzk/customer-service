@@ -3,11 +3,11 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from atguigu.app.respositories.message import MessageRepository
-from atguigu.app.schemas.event import STAFF_CHANNEL, RealTimeOutBoxType
+from atguigu.app.schemas.event import  RealTimeOutBoxType
 from atguigu.app.schemas.message import ChatMessageRequest
 from atguigu.app.services.chat.conversation import ConversationService
 from atguigu.app.services.chat.turn import TurnService
-from atguigu.app.services.realtime import RealTimeOutBoxService, build_message_event_data
+from atguigu.app.services.realtime import RealTimeOutBoxService, build_message_event_data, STAFF_CHANNEL
 from atguigu.common.utils import get_uid, get_utcnow
 from atguigu.models.models import Message, Conversation
 
@@ -60,7 +60,7 @@ class MessageService:
         # 生产环境需要实现---TODO
         conversation = await self.conversation_service.ensure_locked_active_conversation(user_id)
 
-        # 3. 通用的保存消息方法(保存消息之前要先有回话)
+        # 3. 通用的保存消息方法(保存消息之前要先有会话)
         message = self.save_message(
             conversation,
             chat_message.content,

@@ -37,6 +37,6 @@ async def get_conversation_detail(
 
     authorized_user = get_auth_service().get_authorized_user(authorization, "agent", "admin")
 
-    conversation_detail = conversation_service.get_conversation_detail(authorized_user.user_id, conversation_id)
+    conversation_detail = await conversation_service.get_conversation_detail(conversation_id)
 
     return conversation_detail

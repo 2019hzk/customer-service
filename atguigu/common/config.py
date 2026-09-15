@@ -11,6 +11,10 @@ class Settings(BaseSettings):
         "postgresql+psycopg://customer_service:customer_service@192.168.200.188:5432/customer_service"
     )
     redis_url: str = "redis://192.168.200.188:6379/0"
+    ai_service_url: str = "http://127.0.0.1:8002"
+    ai_timeout_seconds: int = 30
+    internal_service_jwt_secret: str = "customer-internal-token"
+    internal_service_jwt_algorithm: str = "HS256"
     jwt_secret: str = "ecommerce-secret"
     jwt_algorithm: str = "HS256"
     api_host: str = "0.0.0.0"
@@ -18,6 +22,10 @@ class Settings(BaseSettings):
     conversation_idle_timeout_minutes: int = 30
     message_merge_delay_ms: int = 800
     message_merge_max_wait_ms: int = 2000
+    ai_worker_poll_interval_ms: int = 100
+    ai_worker_lease_seconds: int = 120
+    ai_worker_max_attempts: int = 3
+    ai_worker_retry_delay_seconds: int = 2
     cors_origins: list[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",

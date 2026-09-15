@@ -69,3 +69,10 @@ class AuthService:
         payload = jwt.decode(access_token, self.settings.jwt_secret, algorithms=[self.settings.jwt_algorithm])
 
         return CurrentUser.model_validate(payload)
+
+    def encode_access_token(self, current_user: CurrentUser) -> str:
+        # return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+        access_token = jwt.encode(current_user.model_dump,
+                                  self.settings.internal_service_jwt_secret,
+                                  self.settings.internal_service_jwt_algorithm)
+        return access_token

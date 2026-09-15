@@ -1,7 +1,9 @@
+from datetime import datetime
+
 from sqlalchemy import select, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from atguigu.models.models import ConversationTurn
+from atguigu.models.models import ConversationTurn, Conversation
 
 
 class ConversationTurnRepository:
@@ -25,5 +27,65 @@ class ConversationTurnRepository:
             .with_for_update()
         )
 
-    def add_turn(self, turn:ConversationTurn):
+    def add_turn(self, turn: ConversationTurn):
         self.session.add(turn)
+
+
+
+    async def find_turn_conversation_by_id(self,turn_id:str)->tuple[ConversationTurn,Conversation]:
+
+        result=await self.session.execute(
+            select(ConversationTurn,Conversation)
+            .join(
+                Conversation,
+                Conversation.id==ConversationTurn.conversation_id
+            )
+            .where(ConversationTurn.id==turn_id)
+            .with_for_update(of=Conversation)
+        )
+        return result.tuples().one()
+
+
+
+
+
+    async def list_expired_running_turns(
+            self,
+            now: datetime
+    ) -> list[ConversationTurn]:
+        """查询租约已经过期的全部运行中 Turn。"""
+        result = await self.session.scalars(
+            select(ConversationTurn)
+            .where(
+                ConversationTurn.status == "RUNNING",
+                ConversationTurn.locked_until <= now
+            )
+        )
+        return list(result.all())
+
+    async def find_ready_turn_conversation_by_lock(self, now: datetime) -> tuple[ConversationTurn, Conversation] | None:
+        """
+        能够被领走的条件是
+        1. turn的状态是 COLLECTING
+        2. turn时间是否比当前时间要小
+        3. 回话的模式是AI
+        :param now:
+        :return:
+        """
+        results = await self.session.execute(
+            select(ConversationTurn, Conversation)
+            .join(
+                Conversation,
+                ConversationTurn.conversation_id == Conversation.id
+            )
+            .where(
+                ConversationTurn.status == "COLLECTING",
+                ConversationTurn.collect_until <= now,
+                Conversation.mode == "AI"
+            )
+            .order_by(ConversationTurn.collect_until, ConversationTurn.created_at)
+            .limit(1)
+            .with_for_update()
+        )
+
+        return results.tuples().one_or_none()

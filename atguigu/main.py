@@ -20,4 +20,4 @@ async def server():
 
 
 if __name__ == '__main__':
-    uvicorn.run(run_async(server()))
+    run_async(server())
