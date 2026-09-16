@@ -49,15 +49,18 @@ class MessageRepository:
         return list(results.all())
 
     async def find_history_message_by_sequence(self,
-                                               conversation_id:str,
+                                               conversation_id: str,
                                                message_id: int,
                                                limit: int = 30
                                                ) -> list[Message]:
         results = await self.session.scalars(
             select(Message)
-            .where(Message.conversation_id==conversation_id,
-                Message.id < message_id)
+            .where(Message.conversation_id == conversation_id,
+                   Message.id < message_id)
             .order_by(Message.id.desc())
             .limit(limit)
         )
         return list(results.all())
+
+    def add(self, message: Message):
+        self.session.add(message)

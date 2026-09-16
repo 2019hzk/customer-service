@@ -62,8 +62,6 @@ class TurnService:
 
         return turn
 
-
-
     async def claim_turn(self, worker_id: str) -> ConversationTurn | None:
         """
         职责：负责从数据库中查询一个Turn
@@ -111,7 +109,8 @@ class TurnService:
 
         # 2. 获取历史消息
         history_messages = list(
-            reversed(await self.message_repo.find_history_message_by_sequence(claimed_turn.conversation_id,current_messages[0].id)))
+            reversed(await self.message_repo.find_history_message_by_sequence(claimed_turn.conversation_id,
+                                                                              current_messages[0].id)))
 
         # 3. 构建字典，作为最终上下文，返回
         return {
@@ -140,22 +139,13 @@ class TurnService:
             ],
         }, current_messages[-1].message_id
 
+    async def find_turn_conversation_by_id(self, turn_id: str) -> tuple[ConversationTurn, Conversation]:
+        return await self.turn_repo.find_turn_conversation_by_id(turn_id)
 
-    async  def find_turn_conversation_by_id(self,turn_id:str)->tuple[ConversationTurn,Conversation]:
-       return await self.turn_repo.find_turn_conversation_by_id(turn_id)
-
-
-    def  mark_superseded(self,turn:ConversationTurn):
-        turn.status="SUPERSEDED"   # 终态
-        turn.finished_at=get_utcnow()
-        TurnService._release_lease(turn) # 清理占用者的信息
-
-
-
-
-
-
-
+    def mark_superseded(self, turn: ConversationTurn):
+        turn.status = "SUPERSEDED"  # 终态
+        turn.finished_at = get_utcnow()
+        self._release_lease(turn)  # 清理占用者的信息
 
     async def list_expired_running_turns_with_conversations(
             self,
@@ -192,3 +182,16 @@ class TurnService:
     def _release_lease(turn: ConversationTurn):
         turn.locked_by = None
         turn.locked_until = None
+
+    def mark_completed(self, turn: ConversationTurn):
+        turn.status = "COMPLETED"
+        turn.finished_at = get_utcnow()
+        self._release_lease(turn)
+
+    def requeue(self, turn: ConversationTurn, error: Exception) -> None:
+        """将租约超时的 Turn 重新放回待领取队列。"""
+        turn.status = "COLLECTING"
+        turn.collect_until = get_utcnow()
+        turn.run_id = None
+        turn.last_error = str(error)
+        self._release_lease(turn)

@@ -32,7 +32,6 @@ class Conversation(Base):
         ),
     )
 
-
     id: Mapped[str] = mapped_column(String(80), primary_key=True, default=lambda: get_uid("conv"))
     user_id: Mapped[str] = mapped_column(String(40), index=True)
     mode: Mapped[str] = mapped_column(String(20), default="AI", index=True)
@@ -106,8 +105,6 @@ class Message(Base):
     conversation: Mapped[Conversation] = relationship(back_populates="messages")
 
 
-
-
 class RealtimeOutbox(Base):
     """等待实时推送 Worker 发布的业务事件。"""
 
@@ -127,7 +124,6 @@ class RealtimeOutbox(Base):
     channel: Mapped[str] = mapped_column(String(160), index=True)
     event_type: Mapped[str] = mapped_column(String(80), index=True)
     conversation_id: Mapped[str | None] = mapped_column(String(80), index=True)
-    request_message_id: Mapped[str | None] = mapped_column(String(80), index=True)
     data: Mapped[dict[str, Any]] = mapped_column(JSONB)
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(
@@ -137,4 +133,55 @@ class RealtimeOutbox(Base):
     published_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         index=True,
+    )
+
+
+class Handoff(Base):
+    """记录一次人工客服工单及其处理状态。"""
+
+    __tablename__ = "handoffs"
+    __table_args__ = (
+        Index(
+            "uq_open_handoff_per_conversation",
+            "conversation_id",
+            unique=True,
+            postgresql_where=text("status IN ('waiting', 'active')"),
+        ),
+        Index(
+            "uq_open_handoff_per_user",
+            "user_id",
+            unique=True,
+            postgresql_where=text("status IN ('waiting', 'active')"),
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(
+        String(80),
+        primary_key=True,
+        default=lambda: get_uid("handoff"),
+    )
+    conversation_id: Mapped[str] = mapped_column(
+        ForeignKey("conversations.id"),
+        index=True,
+    )
+    user_id: Mapped[str] = mapped_column(String(40), index=True)
+    summary: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(
+        String(20),
+        default="waiting",
+        index=True,
+    )
+    assigned_agent_id: Mapped[str | None] = mapped_column(
+        String(40),
+        index=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=get_utcnow,
+    )
+    accepted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
+    resolved_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
     )

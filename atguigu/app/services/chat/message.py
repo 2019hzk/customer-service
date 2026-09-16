@@ -3,7 +3,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from atguigu.app.respositories.message import MessageRepository
-from atguigu.app.schemas.event import  RealTimeOutBoxType
+from atguigu.app.schemas.event import RealTimeOutBoxType
 from atguigu.app.schemas.message import ChatMessageRequest
 from atguigu.app.services.chat.conversation import ConversationService
 from atguigu.app.services.chat.turn import TurnService
@@ -75,12 +75,11 @@ class MessageService:
             await self.turn_service.add_message_to_turn(message, conversation)
         elif conversation.mode in ("QUEUED", "HUMAN"):
             # 管理端、MESSAGE_CREATE、当前消息
-            self.outbox_service.add_realtime_outbox(
-                STAFF_CHANNEL,
-                RealTimeOutBoxType.MESSAGE_CREATE,
-                build_message_event_data(message),
-                conversation.id,
-                chat_message.message_id
+            self.outbox_service.add_message_created_events(
+                conversation,
+                message,
+                notify_user=False,
+                notify_staff=True
             )
         else:
             raise ValueError(f"当前会话模式{conversation.mode}不支持")
@@ -100,7 +99,7 @@ class MessageService:
                      message_id: str | None,
                      *,
                      message_role: str,
-                     message_type: str = "text",
+                     message_type: str = "text"
                      ) -> Message:
 
         # 1. 实例化消息对象
