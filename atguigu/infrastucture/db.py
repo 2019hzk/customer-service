@@ -28,8 +28,6 @@ session_factory: async_sessionmaker[AsyncSession] = async_sessionmaker(
     bind=db_engine,
     expire_on_commit=False  # 用异步数据库连接对象的情况下 该属性一定要设置为False
 )
-
-
 async def get_db_session() -> AsyncGenerator[AsyncSession]:
     """
     1. 调用该方法的调用者：fast_api在处理路由请求的时候调用

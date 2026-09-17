@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from atguigu.models.models import Handoff
+from atguigu.models.models import Handoff, Conversation
 
 
 class HandoffRepository:
@@ -31,3 +31,19 @@ class HandoffRepository:
             .order_by(Handoff.created_at)
         )
         return list(records.all())
+
+    async def find_and_lock_with_conversation_by_id(
+            self,
+            handoff_id: str
+    ) -> tuple[Handoff, Conversation]:
+        """按 ID 查询并锁定工单及其所属会话"""
+        result = await self.session.execute(
+            select(Handoff, Conversation)
+            .join(
+                Conversation,
+                Conversation.id == Handoff.conversation_id
+            )
+            .where(Handoff.id == handoff_id)
+            .with_for_update()
+        )
+        return result.tuples().one()

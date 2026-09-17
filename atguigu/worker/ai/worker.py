@@ -7,8 +7,8 @@ import os
 import socket
 from typing import Any
 
-from atguigu.app.schemas.user import CurrentUser
-from atguigu.app.services.auth import AuthService
+from atguigu.app.schemas.admin.user import CurrentUser
+from atguigu.app.services.admin.auth import AuthService
 from atguigu.app.services.chat.turn import TurnService
 from atguigu.common.event_loop import run_async
 from atguigu.infrastucture.db import session_factory
@@ -16,7 +16,10 @@ from atguigu.worker.ai.gateway import AIServiceGateway
 from atguigu.worker.ai.parser import AIEventParser
 from atguigu.worker.ai.result import AIResultService
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s"
+)
 logger = logging.getLogger(__name__)
 from atguigu.common.config import get_settings
 
@@ -83,7 +86,7 @@ class TurnProcessor:
         try:
             if prepared:
                 # a) 校验快照版本是否过期了，如果要过期了，cancel_run 如果没有过期 调用 commit_run
-                if not await self.validate_before_commit(request_data['turn_id'], run_id):
+                if not await self._validate_before_commit(request_data['turn_id'], run_id):
                     await self.ai_gateway.cancel_run(token, run_id)
                     return run_id, None
                 # b) 调用commit_run
@@ -96,7 +99,7 @@ class TurnProcessor:
                 await self.ai_gateway.cancel_run(token, run_id)
             raise exec
 
-    async def validate_before_commit(self,
+    async def _validate_before_commit(self,
                                      turn_id: str,
                                      run_id: str
                                      ) -> bool:
@@ -156,13 +159,13 @@ class TurnProcessor:
                 if turn_service.retry_or_fail(turn, error):
                     await session.commit()
                     return
-                result_service.save_ai_result(
+                await result_service.save_ai_result(
                     conversation,
                     turn,
                     {
                         "kind": "error",
                         "text": "AI 处理失败，请稍后重试。",
-                    },
+                    }
                 )
             else:
                 # 5. 调用成功时完成 Turn，并按结果类型保存 AI 结果
@@ -171,10 +174,10 @@ class TurnProcessor:
                     await result_service.save_handoff_result(
                         conversation,
                         turn,
-                        run_result,
+                        run_result
                     )
                 else:
-                    result_service.save_ai_result(
+                    await result_service.save_ai_result(
                         conversation,
                         turn,
                         run_result["content"],
@@ -201,14 +204,15 @@ class AIWorker:
         循环执行turn的处理
         :return:
         """
+        logger.info("AI Worker 已启动：%s", self.worker_id)
         while True:
             try:
                 processed = await self.poll_and_process()
 
                 if not processed:
                     await asyncio.sleep(self.setting.ai_worker_poll_interval_ms / 1000)
-            except Exception as exec:
-                logger.exception("%s 执行失败了 原因:%s", self.worker_id, exec)
+            except Exception:
+                logger.exception("AI Worker 本轮轮询失败")
                 await asyncio.sleep(1)
 
     async def poll_and_process(self) -> bool:
@@ -235,7 +239,7 @@ class AIWorker:
         2.构建AI_SERVICE请求的上下文
         :return:
         """
-        with   self.session_factory() as session:
+        async  with  self.session_factory() as session:
             turn_service = TurnService(session)
             # 1. 领取turn
             claimed_turn = await turn_service.claim_turn(self.worker_id)
@@ -262,7 +266,7 @@ class AIWorker:
                 else:
                     turn_service.requeue(
                         turn,
-                        RuntimeError("Worker 租约超时"),
+                        RuntimeError("Worker 租约超时")
                     )
 
             if turns_and_conversations:

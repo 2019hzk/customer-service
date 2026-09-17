@@ -1,8 +1,9 @@
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from atguigu.app.respositories.outbox import OutboxRepository
+from atguigu.app.respositories.realtime import RealTimeOutboxRepository
 from atguigu.app.schemas.event import RealTimeOutBoxType
 from atguigu.models.models import (
     Conversation,
@@ -21,13 +22,15 @@ def user_channel(user_id: str) -> str:
 
 
 def build_message_created_data(message: Message) -> dict[str, Any]:
-    """构建消息创建事件的数据。"""
+    """构建 HTTP 响应与实时事件共用的消息结构。"""
     return {
-        "message": {
-            "message_id": message.message_id,
-            "role": message.role,
-            "content": message.content,
-        }
+        "sequence": message.id,
+        "message_id": message.message_id,
+        "conversation_id": message.conversation_id,
+        "role": message.role,
+        "type": message.message_type,
+        "content": message.content,
+        "created_at": message.created_at.isoformat()
     }
 
 
@@ -42,14 +45,32 @@ def build_handoff_changed_data(handoff: Handoff, conversation: Conversation) -> 
     }
 
 
+def build_realtime_event(
+        event_id: str,
+        event_type: str,
+        event_data: dict[str, Any],
+        conversation_id: str,
+        event_created_at: datetime
+) -> dict[str, Any]:
+    """构建 Redis 与 WebSocket 共用的事件"""
+    return {
+        "event_id": event_id,
+        "event_type": event_type,
+        "event_data": event_data,
+        "event_created_at": event_created_at.isoformat(),
+        "conversation_id": conversation_id
+    }
+
+
 class RealTimeOutBoxService:
     """负责在当前业务事务中创建待发布事件。"""
 
     def __init__(self, session: AsyncSession):
-        self.outbox_repository = OutboxRepository(session)
+        self.outbox_repository = RealTimeOutboxRepository(session)
 
     def add_message_created_events(
-            self, conversation: Conversation,
+            self,
+            conversation: Conversation,
             message: Message,
             *,
             notify_user: bool,
@@ -81,7 +102,7 @@ class RealTimeOutBoxService:
                 RealTimeOutBoxType.HANDOFF_CHANGED,
                 build_handoff_changed_data(
                     handoff,
-                    conversation,
+                    conversation
                 ),
                 conversation_id=conversation.id
             )

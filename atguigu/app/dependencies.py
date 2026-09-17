@@ -3,17 +3,31 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from atguigu.app.services.auth import AuthService
+from atguigu.app.respositories.admin.admin import AdminMetricsRepository
+from atguigu.app.services.admin.admin import AdminMetricsService
+from atguigu.app.services.admin.auth import AuthService
 from atguigu.app.services.chat.conversation import ConversationService
 from atguigu.app.services.chat.message import MessageService
 from atguigu.app.services.chat.turn import TurnService
-from atguigu.app.services.handoff import HandoffService
+from atguigu.app.services.admin.handoff import HandoffService
 from atguigu.app.services.realtime import RealTimeOutBoxService
 from atguigu.infrastucture.db import get_db_session
 
 
 def get_auth_service():
     return AuthService()
+
+
+async def get_admin_metrics_service(
+        session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> AdminMetricsService:
+    return AdminMetricsService(AdminMetricsRepository(session))
+
+
+AdminMetricsServiceDep = Annotated[
+    AdminMetricsService,
+    Depends(get_admin_metrics_service),
+]
 
 
 def get_conversation_service(session: Annotated[AsyncSession, Depends(get_db_session)]):
@@ -59,7 +73,4 @@ async def get_handoff_service(
     return HandoffService(session)
 
 
-HandoffServiceDep = Annotated[
-    HandoffService,
-    Depends(get_handoff_service)
-]
+HandoffServiceDep = Annotated[HandoffService,Depends(get_handoff_service)]

@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://192.168.200.188:6379/0"
     ai_service_url: str = "http://127.0.0.1:8002"
     ai_timeout_seconds: int = 30
+    internal_service_token: str = "customer-service"
     internal_service_jwt_secret: str = "customer-internal-token"
     internal_service_jwt_algorithm: str = "HS256"
     jwt_secret: str = "ecommerce-secret"
@@ -26,6 +27,7 @@ class Settings(BaseSettings):
     ai_worker_lease_seconds: int = 120
     ai_worker_max_attempts: int = 3
     ai_worker_retry_delay_seconds: int = 2
+    outbox_worker_poll_interval_seconds: float = 1
     cors_origins: list[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",

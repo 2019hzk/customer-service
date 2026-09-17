@@ -3,9 +3,9 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from atguigu.app.respositories.conversation import ConversationRepository
-from atguigu.app.respositories.message import MessageRepository
-from atguigu.app.respositories.turn import ConversationTurnRepository
+from atguigu.app.respositories.chat.conversation import ConversationRepository
+from atguigu.app.respositories.chat.message import MessageRepository
+from atguigu.app.respositories.chat.turn import ConversationTurnRepository
 from atguigu.common.utils import get_utcnow
 from atguigu.models.models import Message, Conversation, ConversationTurn
 from atguigu.common.config import get_settings
@@ -82,7 +82,7 @@ class TurnService:
         claimed_turn.status = "RUNNING"
         claimed_turn.snapshot_revision = conversation.input_revision
         claimed_turn.locked_by = worker_id
-        claimed_turn.locked_until = now + timedelta(self.setting.ai_worker_lease_seconds)
+        claimed_turn.locked_until = now + timedelta(seconds=self.setting.ai_worker_lease_seconds)
         claimed_turn.attempts += 1
         claimed_turn.started_at = claimed_turn.started_at or now
 

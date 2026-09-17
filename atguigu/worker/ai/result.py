@@ -2,8 +2,8 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from atguigu.app.respositories.message import MessageRepository
-from atguigu.app.services.handoff import HandoffService
+from atguigu.app.respositories.chat.message import MessageRepository
+from atguigu.app.services.admin.handoff import HandoffService
 from atguigu.app.services.realtime import RealTimeOutBoxService
 from atguigu.common.utils import get_uid, get_utcnow
 from atguigu.models.models import Conversation, ConversationTurn, Message, Handoff
@@ -15,13 +15,13 @@ class AIResultService:
         self.real_service = RealTimeOutBoxService(session)
         self.handoff_service = HandoffService(session)
 
-    def save_ai_result(self,
-                       conversation: Conversation,
-                       turn: ConversationTurn,
-                       content: dict[str, Any],
-                       *,
-                       message_id: str | None = None
-                       ) -> Message:
+    async def save_ai_result(self,
+                             conversation: Conversation,
+                             turn: ConversationTurn,
+                             content: dict[str, Any],
+                             *,
+                             message_id: str | None = None
+                             ) -> Message:
         message = Message(
             message_id=message_id or get_uid("msg"),
             conversation_id=conversation.id,
@@ -35,6 +35,7 @@ class AIResultService:
         self.message_repo.add(message)
         conversation.last_active_at = get_utcnow()
 
+        await self.message_repo.session.flush()
         self.real_service.add_message_created_events(
             conversation,
             message,
@@ -61,7 +62,7 @@ class AIResultService:
         conversation.mode = "QUEUED"
 
         # 3. 保存 AI 转接提示并创建用户端消息事件
-        self.save_ai_result(
+        await self.save_ai_result(
             conversation,
             turn,
             event_data["content"],

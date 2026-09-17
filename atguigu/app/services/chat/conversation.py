@@ -3,9 +3,9 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from atguigu.app.respositories.conversation import ConversationRepository
-from atguigu.app.respositories.message import MessageRepository
-from atguigu.app.respositories.turn import ConversationTurnRepository
+from atguigu.app.respositories.chat.conversation import ConversationRepository
+from atguigu.app.respositories.chat.message import MessageRepository
+from atguigu.app.respositories.chat.turn import ConversationTurnRepository
 from atguigu.common.utils import get_utcnow
 from atguigu.models.models import Conversation, Message
 from atguigu.common.config import get_settings

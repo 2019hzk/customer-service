@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
+from atguigu.app.routers.admin import handoff,admin
+from atguigu.app.routers import  realtime
 from atguigu.app.routers.chat import conversation, message
 from atguigu.common.config import get_settings
 
@@ -8,6 +10,10 @@ app = FastAPI(description="FastAPI集成的客服服务")
 
 app.include_router(conversation.router)
 app.include_router(message.router)
+
+app.include_router(handoff.router)
+app.include_router(realtime.router)
+app.include_router(admin.router)
 
 app.add_middleware(
     CORSMiddleware,

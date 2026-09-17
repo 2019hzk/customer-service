@@ -1,7 +1,7 @@
 import jwt
 from fastapi import HTTPException, status
 
-from atguigu.app.schemas.user import CurrentUser
+from atguigu.app.schemas.admin.user import CurrentUser
 from atguigu.common.config import get_settings
 
 """
@@ -47,7 +47,7 @@ class AuthService:
         access_token = self._extract_token(authorization)
 
         # 2. 根据令牌解密获取用户信息
-        current_user = self._decode_access_token(access_token)
+        current_user = self.decode_access_token(access_token)
 
         return current_user
 
@@ -64,7 +64,7 @@ class AuthService:
             )
         return authorization.split(" ", 1)[1]
 
-    def _decode_access_token(self, access_token: str) -> CurrentUser:
+    def decode_access_token(self, access_token: str) -> CurrentUser:
 
         payload = jwt.decode(access_token, self.settings.jwt_secret, algorithms=[self.settings.jwt_algorithm])
 
