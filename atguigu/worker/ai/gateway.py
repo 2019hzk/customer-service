@@ -9,15 +9,15 @@ class AIServiceGateway:
     """调用真实 AI Service，并解析单个 JSON 事件。"""
 
     def __init__(
-        self,
-        settings: Settings | None = None
+            self,
+            settings: Settings | None = None
     ):
         self.settings = settings or get_settings()
 
     async def start_run(
-        self,
-        token: str,
-        request: dict[str, Any],
+            self,
+            token: str,
+            request: dict[str, Any],
     ) -> dict[str, Any]:
         """启动 AI Run，返回计算结果或待提交决策。"""
         return await self._post_json(
@@ -26,21 +26,21 @@ class AIServiceGateway:
             request,
         )
 
-    async def commit_run(
-        self,
-        token: str,
-        run_id: str,
+    async def confirm_run(
+            self,
+            token: str,
+            run_id: str,
     ) -> dict[str, Any]:
         """发布快照校验通过的 AI 结果。"""
         return await self._post_json(
-            f"/internal/v1/agent/runs/{run_id}/commit",
+            f"/internal/v1/agent/runs/{run_id}/confirm",
             token,
         )
 
     async def cancel_run(
-        self,
-        token: str,
-        run_id: str,
+            self,
+            token: str,
+            run_id: str,
     ) -> None:
         """取消快照已经过期或处理失败的 AI Run。"""
         await self._post(
@@ -49,10 +49,10 @@ class AIServiceGateway:
         )
 
     async def _post_json(
-        self,
-        path: str,
-        token: str,
-        request: dict[str, Any] | None = None,
+            self,
+            path: str,
+            token: str,
+            request: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         response = await self._post(path, token, request)
         event = response.json()
@@ -61,10 +61,10 @@ class AIServiceGateway:
         return event
 
     async def _post(
-        self,
-        path: str,
-        token: str,
-        request: dict[str, Any] | None = None,
+            self,
+            path: str,
+            token: str,
+            request: dict[str, Any] | None = None,
     ) -> httpx.Response:
         """发送 AI Service JSON 请求。"""
         headers = {
@@ -78,8 +78,8 @@ class AIServiceGateway:
         )
 
         async with httpx.AsyncClient(
-            timeout=timeout,
-            trust_env=False,
+                timeout=timeout,
+                trust_env=False,
         ) as client:
             response = await client.post(
                 f"{self.settings.ai_service_url}{path}",

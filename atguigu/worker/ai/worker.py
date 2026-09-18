@@ -90,7 +90,7 @@ class TurnProcessor:
                     await self.ai_gateway.cancel_run(token, run_id)
                     return run_id, None
                 # b) 调用commit_run
-                event = await self.ai_gateway.commit_run(token, run_id)
+                event = await self.ai_gateway.confirm_run(token, run_id)
                 commit = True  # 变量
 
             return run_id, self.event_parser.parser_outcome(event)
@@ -100,9 +100,9 @@ class TurnProcessor:
             raise exec
 
     async def _validate_before_commit(self,
-                                     turn_id: str,
-                                     run_id: str
-                                     ) -> bool:
+                                      turn_id: str,
+                                      run_id: str
+                                      ) -> bool:
 
         async  with session_factory() as session:
             turn_service = TurnService(session)
