@@ -30,13 +30,11 @@ class AIServiceGateway:
         self,
         token: str,
         run_id: str,
-        input_revision: int,
     ) -> dict[str, Any]:
-        """提交快照校验通过的业务决策。"""
+        """发布快照校验通过的 AI 结果。"""
         return await self._post_json(
             f"/internal/v1/agent/runs/{run_id}/commit",
             token,
-            {"input_revision": input_revision},
         )
 
     async def cancel_run(

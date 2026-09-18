@@ -89,7 +89,10 @@ class TurnService:
         # 4. 返回
         return claimed_turn
 
-    async def build_ai_request_data(self, claimed_turn: ConversationTurn) -> tuple[dict[str, Any], str]:
+    async def build_ai_request_data(
+            self,
+            claimed_turn: ConversationTurn
+    ) -> tuple[dict[str, Any], str]:
         """
         职责：
         1. 根据领取到的Turn,选择将该turn范围内的消息获取---当前消息
@@ -115,10 +118,7 @@ class TurnService:
         # 3. 构建字典，作为最终上下文，返回
         return {
             "conversation_id": claimed_turn.conversation_id,
-            "user_id": claimed_turn.user_id,
             "turn_id": claimed_turn.id,
-            "request_id": f"{claimed_turn.id}:attempt:{claimed_turn.attempts}",
-            "input_revision": snapshot_revision,
             "messages": [
                 {
                     "message_id": message.message_id,
@@ -132,12 +132,11 @@ class TurnService:
                     "message_id": message.message_id,
                     "role": message.role,
                     "type": message.message_type,
-                    "content": message.content,
-                    "created_at": message.created_at.isoformat()
+                    "content": message.content
                 }
                 for message in history_messages
             ],
-        }, current_messages[-1].message_id
+        }, claimed_turn.user_id
 
     async def find_turn_conversation_by_id(self, turn_id: str) -> tuple[ConversationTurn, Conversation]:
         return await self.turn_repo.find_turn_conversation_by_id(turn_id)

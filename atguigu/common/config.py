@@ -13,9 +13,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://192.168.200.188:6379/0"
     ai_service_url: str = "http://127.0.0.1:8002"
     ai_timeout_seconds: int = 30
-    internal_service_token: str = "customer-service"
-    internal_service_jwt_secret: str = "customer-internal-token"
-    internal_service_jwt_algorithm: str = "HS256"
+    internal_service_token: str = "customer-internal-token"
     jwt_secret: str = "ecommerce-secret"
     jwt_algorithm: str = "HS256"
     api_host: str = "0.0.0.0"
